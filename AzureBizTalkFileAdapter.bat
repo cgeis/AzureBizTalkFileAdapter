@@ -1,0 +1,11 @@
+md AzureBizTalkFileAdapter
+cd AzureBizTalkFileAdapter
+md docs
+md scripts
+md src
+cd src
+md FileAdapterFunction
+cd ..
+md .github
+cd .github
+md workflows

@@ -1,0 +1,70 @@
+# Azure Functions local development
+local.settings.json
+*.local.settings.json   # sometimes people use variants
+
+# Build / output artifacts
+bin/
+obj/
+csx/
+.vs/
+*.user
+*.suo
+*.cache
+*.vspscc
+*.publishsettings
+*.pubxml
+*.azurePubxml
+
+# Azure Functions publish / deployment folders
+publish/
+dist/
+.funcignore             # optional: used by azd / some tools for packaging exclusions
+
+# Test results / coverage
+TestResults/
+*.trx
+coverage.xml
+coverlet.coverage.*
+*.coverage
+*.coveragexml
+
+# .NET / Visual Studio / Rider
+*.csproj.user
+*.sln.docstates
+_ReSharper*/
+[Tt]est[Rr]esult*/
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs and temp files
+*.log
+*.tmp
+*.cache
+*.swp
+*~.nib
+.DS_Store
+
+# NuGet packages (usually restored, not committed)
+packages/
+*.nupkg
+*.snk
+
+# Optional: ignore all Azure Functions runtime files if you have multiple projects
+# (but usually keep host.json, function.json, etc.)
+# host.json
+# local.settings.json  ← already covered
+
+# Python-specific (if using Python model)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env/
+
+# Node.js-specific (if using JS/TS model)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
