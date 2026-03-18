@@ -3,6 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Azure.Storage.Files.Shares;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.IO;
+using Azure;
 
 public class FilePollerFunction
 {
@@ -30,7 +33,7 @@ public class FilePollerFunction
 
         await foreach (var item in dirClient.GetFilesAndDirectoriesAsync())
         {
-            if (!item.IsFile || !MatchesMask(item.Name, mask)) continue;
+            if (item.IsDirectory || !MatchesMask(item.Name, mask)) continue;
 
             var fileClient = dirClient.GetFileClient(item.Name);
             var download = await fileClient.DownloadAsync();
