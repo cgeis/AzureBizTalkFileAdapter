@@ -35,5 +35,5 @@ jobs:
       - name: Deploy to Azure Functions
         uses: azure/functions-action@v1
         with:
-          app-name: func-biztalkfile-${{ (github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV') | lower }}
+          app-name: func-biztalkfile-${{ toLower(github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV') }}
           package: publish
