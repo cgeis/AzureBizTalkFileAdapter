@@ -1,4 +1,5 @@
 name: Deploy to Azure
+
 on:
   workflow_dispatch:
     inputs:
@@ -6,34 +7,71 @@ on:
         type: choice
         options: [DEV, PRE, PROD]
         required: true
+        default: DEV
   push:
     branches: [main]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     permissions:
-      id-token: write    # ← REQUIRED for OIDC
+      id-token: write    # Required for OIDC federation
       contents: read
-    
-    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV' }}
-    
+
+    # Best practice: use GitHub Environments for approval gates, secrets, protection rules
+    # Here we dynamically select the environment name
+    environment: ${{ inputs.environment || 'DEV' }}   # works for both triggers
+
+    env:
+      ENV_SHORT: ${{ inputs.environment && fromJSON(inputs.environment) || 'DEV' }}
+      # Alternative (more readable) way – set in a step below if you prefer
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '8.0.x' }
-      - run: dotnet build src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release
-      - run: dotnet publish src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release --output publish
-      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release
+
+      - name: Publish
+        run: dotnet publish src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release --output ./publish
+
+      # ────────────────────────────────────────────────
+      # Option A: Recommended – OIDC (no secrets needed in workflow)
+      # ────────────────────────────────────────────────
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          # audience: api://AzureADTokenExchange   # usually not needed (default)
 
-      - name: Deploy to Azure Functions
+      # If you still use publish-profile instead of OIDC → uncomment and remove login step
+      # - name: Deploy using publish profile
+      #   uses: azure/functions-action@v1
+      #   with:
+      #     app-name: func-biztalkfile-${{ env.ENV_SHORT }}
+      #     package: ./publish
+      #     publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_${{ env.ENV_SHORT }} }}
+
+      - name: Deploy to Azure Functions (OIDC)
         uses: azure/functions-action@v1
         with:
-          app-name: func-biztalkfile-${{ toLowerCase(github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV') }}
-          package: publish
+          app-name: func-biztalkfile-${{ toLower(env.ENV_SHORT) }}
+          package: ./publish
+          # Optional / commonly useful flags:
+          # respect-funcignore: true
+          # respect-pom-xml: false   # usually not needed for .NET
+          # enable-app-insights: true
+
+      # Optional – useful for debugging
+      - name: Show chosen environment (debug)
+        run: echo "Deploying to → ${{ env.ENV_SHORT }} → func-biztalkfile-${{ toLower(env.ENV_SHORT) }}"
+        
