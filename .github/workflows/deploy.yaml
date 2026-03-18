@@ -5,9 +5,9 @@ on:
     inputs:
       environment:
         type: choice
-        options: [DEV, PRE, PROD]
+        options: [dev, pre, prod]
         required: true
-        default: DEV
+        default: dev
   push:
     branches: [main]
 
@@ -21,10 +21,10 @@ jobs:
 
     # Best practice: use GitHub Environments for approval gates, secrets, protection rules
     # Here we dynamically select the environment name
-    environment: ${{ inputs.environment || 'DEV' }}   # works for both triggers
+    environment: ${{ inputs.environment || 'dev' }}   # works for both triggers
 
     env:
-      ENV_SHORT: ${{ inputs.environment && fromJSON(inputs.environment) || 'DEV' }}
+      ENV_SHORT: ${{ inputs.environment && fromJSON(inputs.environment) || 'dev' }}
       # Alternative (more readable) way – set in a step below if you prefer
 
     steps:
@@ -64,7 +64,7 @@ jobs:
       - name: Deploy to Azure Functions (OIDC)
         uses: azure/functions-action@v1
         with:
-          app-name: func-biztalkfile-${{ toLower(env.ENV_SHORT) }}
+          app-name: func-biztalkfile-${{ env.ENV_SHORT }}
           package: ./publish
           # Optional / commonly useful flags:
           # respect-funcignore: true
@@ -73,5 +73,4 @@ jobs:
 
       # Optional – useful for debugging
       - name: Show chosen environment (debug)
-        run: echo "Deploying to → ${{ env.ENV_SHORT }} → func-biztalkfile-${{ toLower(env.ENV_SHORT) }}"
-        
+        run: echo "Deploying to → ${{ env.ENV_SHORT }} → func-biztalkfile-${{ env.ENV_SHORT }}"
