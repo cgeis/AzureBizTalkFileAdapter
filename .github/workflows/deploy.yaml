@@ -8,19 +8,32 @@ on:
         required: true
   push:
     branches: [main]
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write    # ← REQUIRED for OIDC
+      contents: read
+    
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV' }}
+    
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
       - run: dotnet build src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release
       - run: dotnet publish src/FileAdapterFunction/FileAdapterFunction.csproj --configuration Release --output publish
-      - uses: azure/login@v2
-        with: { creds: ${{ secrets.AZURE_CREDENTIALS }} }
-      - uses: azure/functions-action@v1
+      
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Functions
+        uses: azure/functions-action@v1
         with:
           app-name: func-biztalkfile-${{ (github.event_name == 'workflow_dispatch' && inputs.environment || 'DEV') | lower }}
           package: publish
